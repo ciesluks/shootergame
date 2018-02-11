@@ -29,6 +29,7 @@ function preload(){
 
 function create(){
 	game.stage.backgroundColor = "#000000";
+    game.physics.startSystem(Phaser.Physics.ARCADE);
 
     upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
     downKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
@@ -42,20 +43,21 @@ function create(){
     player = new player(276,276);
     setWeapon();
 
-    enemies = game.add.group();
-    for (var i = 0; i < 16; i++)
-    {
-        //  This creates a new Phaser.Sprite instance within the group
-        //  It will be randomly placed within the world and use the 'baddie' image to display
-        enemies.create(game.world.randomX, game.world.randomY, 'ufo_green');
-    }
-
-
+    enemies = [];
 }
 
 function update(){
     player.update();
     fireWeapon();
+    if (enemies.length < 10)
+    {
+        var enemy = new enemy1(game.world.randomX, -24);
+        enemies.push(enemy);
+    }
+    for (var i = 0; i < enemies.length; i++)
+    {
+        enemies[i].update();
+    }
 }
 
 function player(x,y) {
@@ -63,11 +65,39 @@ function player(x,y) {
     this.speed = 2;
     game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
 	this.sprite.body.collideWorldBounds = true;
-    this.update = function() {
-        if (upKey.isDown) { player.sprite.y -= player.speed; }
-        else if (downKey.isDown) { player.sprite.y += player.speed; }
-        if (leftKey.isDown) { player.sprite.x -= player.speed; }
-        else if (rightKey.isDown) { player.sprite.x += player.speed; }
+    this.update = function()
+    {
+        if (upKey.isDown) { this.sprite.y -= this.speed; }
+        else if (downKey.isDown) { this.sprite.y += this.speed; }
+        if (leftKey.isDown) { this.sprite.x -= this.speed; }
+        else if (rightKey.isDown) { this.sprite.x += this.speed; }
+    }
+}
+
+function enemy1(x,y) {
+    this.sprite = game.add.sprite(x, y, 'ufo_green');
+    this.speed = 1;
+    game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
+    this.sprite.body.bounce.set(0.8);
+    this.sprite.body.immovable = true;
+    this.update = function()
+    {
+        if(this.sprite.x < player.sprite.x)
+        {
+            this.sprite.x += this.speed;
+        }
+        if(this.sprite.x > player.sprite.x)
+        {
+            this.sprite.x -= this.speed;
+        }
+        if(this.sprite.y < player.sprite.y)
+        {
+            this.sprite.y += this.speed;
+        }
+        if(this.sprite.y > player.sprite.y)
+        {
+            this.sprite.y -= this.speed;
+        }
     }
 }
 
@@ -123,8 +153,4 @@ function fireWeapon() {
         weapon.fireAngle = Phaser.ANGLE_LEFT;
         weapon.fire();
     }
-}
-
-function enemy(x, y) {
-    this
 }
