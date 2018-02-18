@@ -1,11 +1,3 @@
-window.addEventListener("keydown", function(e) {
-    // space and arrow keys
-    if([32, 37, 38, 39, 40].indexOf(e.keyCode) > -1) {
-        e.preventDefault();
-    }
-}, false);
-
-var game;
 var player;
 var weapon;
 var upKey;
@@ -40,70 +32,58 @@ Enemy1.prototype.update = function() { //  Automatically called by World.update
     this.body.velocity.y = Math.sin(angle) * 50;
 }
 
-window.onload = function() {
-		game = new Phaser.Game(600, 600, Phaser.CANVAS, "gameContainer",
-		{ preload: preload, create: create, update: update });
-}
+var playState = {
+    create: function() {
+    	game.stage.backgroundColor = "#FFFFFF";
+        // Setup controller settings
+        upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
+        downKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
+        leftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
+        rightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
+        fireUpKey = game.input.keyboard.addKey(Phaser.Keyboard.UP);
+        fireDownKey = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
+        fireLeftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+        fireRightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+        // Create player
+        player = new player(276,276);
+        setWeapon();
+        // Create group for enemies
+        enemies = game.add.group();
+        enemies.classType = Enemy1;
+        // Create our timer
+        timer = game.time.create(false);
+        timer.loop(60000, levelComplete, this);
+    },
 
-function preload(){
-    game.load.image('enemy1', 'assets/images/enemy1.png');
-    game.load.image('viking', 'assets/images/viking32.png');
-    game.load.image('knife', 'assets/images/knife.png');
-    game.load.spritesheet('viking_move', 'assets/images/viking32_move.png', 32, 32);
-    game.load.spritesheet('enemy1_move', 'assets/images/enemy1_move.png', 32, 32);
-}
-
-function create(){
-	game.stage.backgroundColor = "#FFFFFF";
-    game.physics.startSystem(Phaser.Physics.ARCADE);
-    // Setup controller settings
-    upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
-    downKey = game.input.keyboard.addKey(Phaser.Keyboard.S);
-    leftKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
-    rightKey = game.input.keyboard.addKey(Phaser.Keyboard.D);
-    fireUpKey = game.input.keyboard.addKey(Phaser.Keyboard.UP);
-    fireDownKey = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
-    fireLeftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
-    fireRightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
-    // Create player
-    player = new player(276,276);
-    setWeapon();
-    // Create group for enemies
-    enemies = game.add.group();
-    enemies.classType = Enemy1;
-    // Create our timer
-    timer = game.time.create(false);
-    timer.loop(60000, levelComplete, this);
-}
-
-function update(){
-    // Update player
-    player.update();
-    // Update weapon
-    fireWeapon();
-    // Create new enemies
-    if (enemies.length < 10) {
-        var enemy;
-        switch(Math.floor(Math.random()*4)) {
-            case 0:
-                enemy = new Enemy1(game, game.world.randomX, -100);
-                break;
-            case 1:
-                enemy = new Enemy1(game, game.world.randomX, 700);
-                break;
-            case 2:
-                enemy = new Enemy1(game, -100, game.world.randomY);
-                break;
-            case 3:
-                enemy = new Enemy1(game, 700, game.world.randomY);
-                break;
+    update: function() {
+        // Update player
+        player.update();
+        // Update weapon
+        fireWeapon();
+        // Create new enemies
+        if (enemies.length < 10) {
+            var enemy;
+            switch(Math.floor(Math.random()*4)) {
+                case 0:
+                    enemy = new Enemy1(game, game.world.randomX, -100);
+                    break;
+                case 1:
+                    enemy = new Enemy1(game, game.world.randomX, 700);
+                    break;
+                case 2:
+                    enemy = new Enemy1(game, -100, game.world.randomY);
+                    break;
+                case 3:
+                    enemy = new Enemy1(game, 700, game.world.randomY);
+                    break;
+            }
+            enemies.add(enemy);
         }
-        enemies.add(enemy);
+        // Check for collision events
+        game.physics.arcade.overlap(enemies, weapon.bullets, bulletCollisionHandler, null, this);
+        game.physics.arcade.collide(enemies);
     }
-    // Check for collision events
-    game.physics.arcade.overlap(enemies, weapon.bullets, bulletCollisionHandler, null, this);
-    game.physics.arcade.collide(enemies);
-}
+};
 
 function player(x,y) {
     this.sprite = game.add.sprite(x, y, 'viking_move');
