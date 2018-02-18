@@ -19,7 +19,9 @@ var fireRightKey;
 var enemies;
 
 function Enemy1(game,x,y) {
-    Phaser.Sprite.call(this, game, x, y, 'ufo_green');
+    Phaser.Sprite.call(this, game, x, y, 'enemy1_move');
+    this.animations.add('walk');
+    this.animations.play('walk', 8, true);
     game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.bounce.setTo(1, 1);
 }
@@ -44,11 +46,15 @@ window.onload = function() {
 }
 
 function preload(){
-    game.load.image('ufo_green', 'assets/images/ufo_green.png');
+    game.load.image('enemy1', 'assets/images/enemy1.png');
+    game.load.image('viking', 'assets/images/viking32.png');
+    game.load.image('knife', 'assets/images/knife.png');
+    game.load.spritesheet('viking_move', 'assets/images/viking32_move.png', 32, 32);
+    game.load.spritesheet('enemy1_move', 'assets/images/enemy1_move.png', 32, 32);
 }
 
 function create(){
-	game.stage.backgroundColor = "#000000";
+	game.stage.backgroundColor = "#FFFFFF";
     game.physics.startSystem(Phaser.Physics.ARCADE);
 
     upKey = game.input.keyboard.addKey(Phaser.Keyboard.W);
@@ -93,7 +99,10 @@ function update(){
 }
 
 function player(x,y) {
-    this.sprite = game.add.sprite(x, y, 'ufo_green')
+    this.sprite = game.add.sprite(x, y, 'viking_move');
+    this.sprite.animations.add('walk');
+    this.sprite.animations.play('walk', 10, true);
+
     this.speed = 2;
     game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
 	this.sprite.body.collideWorldBounds = true;
@@ -111,7 +120,7 @@ function bulletCollisionHandler(enemy, bullet) {
 }
 
 function setWeapon() {
-    weapon = game.add.weapon(30, 'ufo_green');
+    weapon = game.add.weapon(30, 'knife');
     //  The bullet will be automatically killed when it leaves the world bounds
     weapon.bulletKillType = Phaser.Weapon.KILL_WORLD_BOUNDS;
     //  The speed at which the bullet is fired
