@@ -11,16 +11,17 @@ var fireRightKey;
 var enemies;
 var timer;
 
-function Enemy1(game,x,y) {
-    Phaser.Sprite.call(this, game, x, y, 'enemy1_move');
+function Enemy1(game, x, y, speed, sprite, lives) {
+    Phaser.Sprite.call(this, game, x, y, sprite);
     this.animations.add('walk');
     this.animations.play('walk', 8, true);
     game.physics.enable(this, Phaser.Physics.ARCADE);
     this.body.bounce.setTo(1, 1);
+    this.moveSpeed = speed;
+    this.lives = lives;
 }
 Enemy1.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy1.prototype.constructor = Enemy1;
-Enemy1.prototype.speed = 1;
 Enemy1.prototype.update = function() { //  Automatically called by World.update
     // Calculate direction towards player
     toPlayerX = player.sprite.x - this.x;
@@ -28,8 +29,8 @@ Enemy1.prototype.update = function() { //  Automatically called by World.update
     toPlayerLength = Math.sqrt(toPlayerX * toPlayerX + toPlayerY * toPlayerY);
     var angle = Math.atan2(toPlayerY, toPlayerX);
 
-    this.body.velocity.x = Math.cos(angle) * 50;
-    this.body.velocity.y = Math.sin(angle) * 50;
+    this.body.velocity.x = Math.cos(angle) * 50 * this.moveSpeed;
+    this.body.velocity.y = Math.sin(angle) * 50 * this.moveSpeed;
 }
 
 var playState = {
@@ -45,14 +46,16 @@ var playState = {
         fireLeftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         fireRightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
         // Create player
-        player = new player(276,276);
+        player = new Player(276,276);
         setWeapon();
+        // First wave
+        this.wave = 1;
         // Create group for enemies
         enemies = game.add.group();
         enemies.classType = Enemy1;
+        this.maxNumberOfEnemies = 10;
         // Create our timer
-        timer = game.time.create(false);
-        timer.loop(60000, levelComplete, this);
+        game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
     },
 
     update: function() {
@@ -61,36 +64,97 @@ var playState = {
         // Update weapon
         fireWeapon();
         // Create new enemies
-        if (enemies.length < 10) {
+        if (enemies.length < this.maxNumberOfEnemies) {
             var enemy;
+            var sprite;
+            var speed;
+            var x;
+            var y;
+            var lives;
+            var r;
+
             switch(Math.floor(Math.random()*4)) {
                 case 0:
-                    enemy = new Enemy1(game, game.world.randomX, -100);
+                    x = game.world.randomX;
+                    y = -100 - (Math.floor(Math.random()*200));
                     break;
                 case 1:
-                    enemy = new Enemy1(game, game.world.randomX, 700);
+                    x = game.world.randomX;
+                    y = 700 + (Math.floor(Math.random()*200));
                     break;
                 case 2:
-                    enemy = new Enemy1(game, -100, game.world.randomY);
+                    x = -100 - (Math.floor(Math.random()*200));
+                    y = game.world.randomY;
                     break;
                 case 3:
-                    enemy = new Enemy1(game, 700, game.world.randomY);
+                    x = 700 + (Math.floor(Math.random()*200));
+                    y = game.world.randomY;
                     break;
             }
+            r = Math.floor(Math.random()*10);
+            sprite = 'enemy1_move';
+            speed = 1;
+            lives = 1;
+            switch (r) {
+                case 0:
+                    if (this.wave > 1) {
+                        sprite = 'enemy1_move';
+                        speed = 2;
+                        lives = 1;
+                    }
+                    break;
+                case 1:
+                    if (this.wave > 2) {
+                        sprite = 'enemy1_move';
+                        speed = 0.5;
+                        lives = 3;
+                    }
+                    break;
+            }
+            enemy = new Enemy1(game, x, y, speed, sprite, lives);
             enemies.add(enemy);
         }
         // Check for collision events
         game.physics.arcade.overlap(enemies, weapon.bullets, bulletCollisionHandler, null, this);
+        game.physics.arcade.overlap(enemies, player.sprite, this.gameover, null, this);
         game.physics.arcade.collide(enemies);
+    },
+
+    levelComplete: function() {
+        resetGame();
+        this.wave++;
+        switch (this.wave) {
+            case 2:
+                this.maxNumberOfEnemies = 15;
+                game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
+                break;
+            case 3:
+                game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
+                break;
+            case 4:
+                game.state.start('win');
+                break;
+        }
+    },
+
+    gameover: function() {
+        player.lives--;
+        if (player.lives <= 0) {
+            game.state.start('gameover');
+        }
+        else {
+            resetGame();
+        }
     }
 };
 
-function player(x,y) {
+function Player(x,y) {
     this.sprite = game.add.sprite(x, y, 'viking_move');
     this.sprite.animations.add('walk');
     this.sprite.animations.play('walk', 10, true);
 
     this.speed = 2;
+    this.lives = 3;
     game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
 	this.sprite.body.collideWorldBounds = true;
     this.update = function() {
@@ -117,8 +181,21 @@ function player(x,y) {
 }
 
 function bulletCollisionHandler(enemy, bullet) {
-    enemies.remove(enemy);
     bullet.kill();
+    enemy.lives--;
+    if (enemy.lives <= 0) {
+        enemies.remove(enemy);
+    }
+}
+
+function resetGame() {
+    player.sprite.x = 276;
+    player.sprite.y = 276;
+    var length = enemies.length;
+    for (var i=0; i < length; i++) {
+        enemies.remove(enemies.getAt(0));
+    }
+    weapon.killAll();
 }
 
 function setWeapon() {
@@ -165,8 +242,4 @@ function fireWeapon() {
         weapon.fireAngle = Phaser.ANGLE_LEFT;
         weapon.fire();
     }
-}
-
-function levelComplete() {
-
 }
