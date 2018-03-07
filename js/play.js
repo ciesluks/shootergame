@@ -1,4 +1,3 @@
-var player;
 var weapon;
 var upKey;
 var downKey;
@@ -8,8 +7,6 @@ var fireUpKey;
 var fireDownKey;
 var fireLeftKey;
 var fireRightKey;
-var enemies;
-var timer;
 
 function Enemy1(game, x, y, speed, sprite, lives) {
     Phaser.Sprite.call(this, game, x, y, sprite);
@@ -24,8 +21,8 @@ Enemy1.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy1.prototype.constructor = Enemy1;
 Enemy1.prototype.update = function() { //  Automatically called by World.update
     // Calculate direction towards player
-    toPlayerX = player.sprite.x - this.x;
-    toPlayerY = player.sprite.y - this.y;
+    toPlayerX = playState.player.sprite.x - this.x;
+    toPlayerY = playState.player.sprite.y - this.y;
     toPlayerLength = Math.sqrt(toPlayerX * toPlayerX + toPlayerY * toPlayerY);
     var angle = Math.atan2(toPlayerY, toPlayerX);
 
@@ -46,13 +43,13 @@ var playState = {
         fireLeftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         fireRightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
         // Create player
-        player = new Player(276,276);
+        this.player = new Player(276,276);
         setWeapon();
         // First wave
         this.wave = 1;
         // Create group for enemies
-        enemies = game.add.group();
-        enemies.classType = Enemy1;
+        this.enemies = game.add.group();
+        this.enemies.classType = Enemy1;
         this.maxNumberOfEnemies = 10;
         // Create our timer
         game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
@@ -60,68 +57,21 @@ var playState = {
 
     update: function() {
         // Update player
-        player.update();
+        this.player.update();
         // Update weapon
         fireWeapon();
         // Create new enemies
-        if (enemies.length < this.maxNumberOfEnemies) {
-            var enemy;
-            var sprite;
-            var speed;
-            var x;
-            var y;
-            var lives;
-            var r;
-
-            switch(Math.floor(Math.random()*4)) {
-                case 0:
-                    x = game.world.randomX;
-                    y = -100 - (Math.floor(Math.random()*200));
-                    break;
-                case 1:
-                    x = game.world.randomX;
-                    y = 700 + (Math.floor(Math.random()*200));
-                    break;
-                case 2:
-                    x = -100 - (Math.floor(Math.random()*200));
-                    y = game.world.randomY;
-                    break;
-                case 3:
-                    x = 700 + (Math.floor(Math.random()*200));
-                    y = game.world.randomY;
-                    break;
-            }
-            r = Math.floor(Math.random()*10);
-            sprite = 'enemy1_move';
-            speed = 1;
-            lives = 1;
-            switch (r) {
-                case 0:
-                    if (this.wave > 1) {
-                        sprite = 'enemy1_move';
-                        speed = 2;
-                        lives = 1;
-                    }
-                    break;
-                case 1:
-                    if (this.wave > 2) {
-                        sprite = 'enemy1_move';
-                        speed = 0.5;
-                        lives = 3;
-                    }
-                    break;
-            }
-            enemy = new Enemy1(game, x, y, speed, sprite, lives);
-            enemies.add(enemy);
+        if (this.enemies.length < this.maxNumberOfEnemies) {
+            this.createEnemy();
         }
         // Check for collision events
-        game.physics.arcade.overlap(enemies, weapon.bullets, bulletCollisionHandler, null, this);
-        game.physics.arcade.overlap(enemies, player.sprite, this.gameover, null, this);
-        game.physics.arcade.collide(enemies);
+        game.physics.arcade.overlap(this.enemies, weapon.bullets, this.bulletCollisionHandler, null, this);
+        game.physics.arcade.overlap(this.enemies, this.player.sprite, this.gameover, null, this);
+        game.physics.arcade.collide(this.enemies);
     },
 
     levelComplete: function() {
-        resetGame();
+        this.resetGame();
         this.wave++;
         switch (this.wave) {
             case 2:
@@ -138,12 +88,81 @@ var playState = {
     },
 
     gameover: function() {
-        player.lives--;
-        if (player.lives <= 0) {
+        this.player.lives--;
+        if (this.player.lives <= 0) {
             game.state.start('gameover');
         }
         else {
-            resetGame();
+            this.resetGame();
+        }
+    },
+
+    resetGame: function() {
+        this.player.sprite.x = 276;
+        this.player.sprite.y = 276;
+        var length = this.enemies.length;
+        for (var i=0; i < length; i++) {
+            this.enemies.remove(this.enemies.getAt(0));
+        }
+        weapon.killAll();
+    },
+
+    createEnemy: function() {
+        var enemy;
+        var sprite;
+        var speed;
+        var x;
+        var y;
+        var lives;
+        var r;
+
+        switch(Math.floor(Math.random()*4)) {
+            case 0:
+                x = game.world.randomX;
+                y = -100 - (Math.floor(Math.random()*200));
+                break;
+            case 1:
+                x = game.world.randomX;
+                y = 700 + (Math.floor(Math.random()*200));
+                break;
+            case 2:
+                x = -100 - (Math.floor(Math.random()*200));
+                y = game.world.randomY;
+                break;
+            case 3:
+                x = 700 + (Math.floor(Math.random()*200));
+                y = game.world.randomY;
+                break;
+        }
+        r = Math.floor(Math.random()*5);
+        sprite = 'enemy1_move';
+        speed = 1;
+        lives = 1;
+        switch (r) {
+            case 0:
+                if (this.wave > 1) {
+                    sprite = 'enemy2_move';
+                    speed = 2;
+                    lives = 1;
+                }
+                break;
+            case 1:
+                if (this.wave > 2) {
+                    sprite = 'enemy3_move';
+                    speed = 0.5;
+                    lives = 3;
+                }
+                break;
+        }
+        enemy = new Enemy1(game, x, y, speed, sprite, lives);
+        this.enemies.add(enemy);
+    },
+
+    bulletCollisionHandler: function(enemy, bullet) {
+        bullet.kill();
+        enemy.lives--;
+        if (enemy.lives <= 0) {
+            this.enemies.remove(enemy);
         }
     }
 };
@@ -180,24 +199,6 @@ function Player(x,y) {
     }
 }
 
-function bulletCollisionHandler(enemy, bullet) {
-    bullet.kill();
-    enemy.lives--;
-    if (enemy.lives <= 0) {
-        enemies.remove(enemy);
-    }
-}
-
-function resetGame() {
-    player.sprite.x = 276;
-    player.sprite.y = 276;
-    var length = enemies.length;
-    for (var i=0; i < length; i++) {
-        enemies.remove(enemies.getAt(0));
-    }
-    weapon.killAll();
-}
-
 function setWeapon() {
     weapon = game.add.weapon(30, 'knife');
     //  The bullet will be automatically killed when it leaves the world bounds
@@ -206,7 +207,7 @@ function setWeapon() {
     weapon.bulletSpeed = 400;
     //  Speed-up the rate of fire, allowing them to shoot 1 bullet every X ms
     weapon.fireRate = 300;
-    weapon.trackSprite(player.sprite, 12, 12, false);
+    weapon.trackSprite(playState.player.sprite, 12, 12, false);
 }
 
 function fireWeapon() {

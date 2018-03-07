@@ -2,11 +2,11 @@ var menuState = {
     create: function() {
         game.stage.backgroundColor = "#000000";
 
-        var nameLabel = game.add.text(80, 80, 'SKARGORD',
-                            {font: '50px Arial', fill: '#FFFFFF'});
-
-        var startLabel = game.add.text(80, 160, 'Press the "SPACEBAR" key to start',
+        var nameLabel = game.add.text(220, 275, 'SKARGORD',
                             {font: '25px Arial', fill: '#FFFFFF'});
+
+        var startLabel = game.add.text(200, 325, 'Press the "SPACEBAR" key to start',
+                            {font: '12px Arial', fill: '#FFFFFF'});
 
         var wkey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 

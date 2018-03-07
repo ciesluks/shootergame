@@ -8,6 +8,8 @@ var loadState = {
         game.load.image('knife', 'assets/images/knife.png');
         game.load.spritesheet('viking_move', 'assets/images/viking32_move.png', 32, 32);
         game.load.spritesheet('enemy1_move', 'assets/images/enemy1_move.png', 32, 32);
+        game.load.spritesheet('enemy2_move', 'assets/images/enemy2_move.png', 32, 32);
+        game.load.spritesheet('enemy3_move', 'assets/images/enemy3_move.png', 32, 32);
         //game.load.spritesheet('enemy1_killed', 'assets/images/enemy_killed.png', 32, 32, 8);
     },
 
