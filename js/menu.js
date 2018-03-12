@@ -8,9 +8,9 @@ var menuState = {
         var startLabel = game.add.text(200, 325, 'Press the "SPACEBAR" key to start',
                             {font: '12px Arial', fill: '#FFFFFF'});
 
-        var wkey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        var spacekey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
-        wkey.onDown.addOnce(this.start, this);
+        spacekey.onDown.addOnce(this.start, this);
     },
 
     start: function() {
