@@ -11,8 +11,8 @@ Enemy1.prototype = Object.create(Phaser.Sprite.prototype);
 Enemy1.prototype.constructor = Enemy1;
 Enemy1.prototype.update = function() { //  Automatically called by World.update
     // Calculate direction towards player
-    toPlayerX = playState.player.sprite.x - this.x;
-    toPlayerY = playState.player.sprite.y - this.y;
+    toPlayerX = playState.player.x - this.x;
+    toPlayerY = playState.player.y - this.y;
     toPlayerLength = Math.sqrt(toPlayerX * toPlayerX + toPlayerY * toPlayerY);
     var angle = Math.atan2(toPlayerY, toPlayerX);
 
@@ -28,6 +28,45 @@ function Coin(game, x, y, value, sprite) {
 Coin.prototype = Object.create(Phaser.Sprite.prototype);
 Coin.prototype.constructor = Coin;
 
+function Player(game, x, y, sprite) {
+    Phaser.Sprite.call(this, game, x, y, sprite);
+    this.animations.add('walk');
+    this.animations.play('walk', 10, true);
+    this.speed = 1.5;
+    this.lives = 3;
+    game.physics.enable(this, Phaser.Physics.ARCADE);
+	this.body.collideWorldBounds = true;
+}
+Player.prototype = Object.create(Phaser.Sprite.prototype);
+Player.prototype.constructor = Player;
+Player.prototype.update = function() { //  Automatically called by World.update
+    if (playState.upKey.isDown) {
+        this.body.velocity.y = -50 * this.speed;
+        this.animations.play('walk', 10, true);
+    }
+    else if (playState.downKey.isDown) {
+        this.body.velocity.y = 50 * this.speed;
+        this.animations.play('walk', 10, true);
+    }
+    if (playState.leftKey.isDown) {
+        this.body.velocity.x = -50 * this.speed;
+        this.animations.play('walk', 10, true);
+    }
+    else if (playState.rightKey.isDown) {
+        this.body.velocity.x = 50 * this.speed;
+        this.animations.play('walk', 10, true);
+    }
+    if (playState.upKey.isUp && playState.downKey.isUp && playState.leftKey.isUp && playState.rightKey.isUp) {
+        this.animations.stop(null, true);
+    }
+    if (playState.upKey.isUp && playState.downKey.isUp) {
+        this.body.velocity.y = 0;
+    }
+    if (playState.leftKey.isUp && playState.rightKey.isUp) {
+        this.body.velocity.x = 0;
+    }
+}
+
 var playState = {
     create: function() {
     	game.stage.backgroundColor = "#FFFFFF";
@@ -41,7 +80,8 @@ var playState = {
         this.fireLeftKey = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         this.fireRightKey = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
         // Create player
-        this.player = new Player(276,276);
+        this.player = new Player(this.game, 276,276, 'viking_move');
+        game.add.existing(this.player);
         this.setWeapon();
         // First wave
         this.wave = 1;
@@ -55,13 +95,11 @@ var playState = {
     },
 
     update: function() {
-        // Update player
-        this.player.update();
         // Update weapon
         this.fireWeapon();
         // Check for collision events
         game.physics.arcade.overlap(this.enemies, this.weapon.bullets, this.bulletCollisionHandler, null, this);
-        game.physics.arcade.overlap(this.enemies, this.player.sprite, this.gameover, null, this);
+        game.physics.arcade.overlap(this.enemies, this.player, this.gameover, null, this);
         game.physics.arcade.collide(this.enemies);
     },
 
@@ -93,8 +131,8 @@ var playState = {
     },
 
     resetGame: function() {
-        this.player.sprite.x = 276;
-        this.player.sprite.y = 276;
+        this.player.x = 276;
+        this.player.y = 276;
         var length = this.enemies.length;
         for (var i=0; i < length; i++) {
             this.enemies.remove(this.enemies.getAt(0));
@@ -149,7 +187,7 @@ var playState = {
                 }
                 break;
         }
-        enemy = new Enemy1(game, x, y, speed, sprite, lives);
+        enemy = new Enemy1(this.game, x, y, speed, sprite, lives);
         this.enemies.add(enemy);
         game.time.events.add(Phaser.Timer.SECOND * 0.5, this.createEnemy, this);
     },
@@ -170,7 +208,7 @@ var playState = {
         this.weapon.bulletSpeed = 400;
         //  Speed-up the rate of fire, allowing them to shoot 1 bullet every X ms
         this.weapon.fireRate = 300;
-        this.weapon.trackSprite(playState.player.sprite, 12, 12, false);
+        this.weapon.trackSprite(this.player, 12, 12, false);
     },
 
     fireWeapon: function() {
@@ -208,40 +246,3 @@ var playState = {
         }
     }
 };
-
-function Player(x,y) {
-    this.sprite = game.add.sprite(x, y, 'viking_move');
-    this.sprite.animations.add('walk');
-    this.sprite.animations.play('walk', 10, true);
-    this.speed = 1.5;
-    this.lives = 3;
-    game.physics.enable(this.sprite, Phaser.Physics.ARCADE);
-	this.sprite.body.collideWorldBounds = true;
-    this.update = function() {
-        if (playState.upKey.isDown) {
-            this.sprite.body.velocity.y = -50 * this.speed;
-            this.sprite.animations.play('walk', 10, true);
-        }
-        else if (playState.downKey.isDown) {
-            this.sprite.body.velocity.y = 50 * this.speed;
-            this.sprite.animations.play('walk', 10, true);
-        }
-        if (playState.leftKey.isDown) {
-            this.sprite.body.velocity.x = -50 * this.speed;
-            this.sprite.animations.play('walk', 10, true);
-        }
-        else if (playState.rightKey.isDown) {
-            this.sprite.body.velocity.x = 50 * this.speed;
-            this.sprite.animations.play('walk', 10, true);
-        }
-        if (playState.upKey.isUp && playState.downKey.isUp && playState.leftKey.isUp && playState.rightKey.isUp) {
-            this.sprite.animations.stop(null, true);
-        }
-        if (playState.upKey.isUp && playState.downKey.isUp) {
-            this.sprite.body.velocity.y = 0;
-        }
-        if (playState.leftKey.isUp && playState.rightKey.isUp) {
-            this.sprite.body.velocity.x = 0;
-        }
-    }
-}
