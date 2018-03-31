@@ -34,6 +34,7 @@ function Player(game, x, y, sprite) {
     this.animations.play('walk', 10, true);
     this.speed = 1.5;
     this.lives = 3;
+    this.coins = 0;
     game.physics.enable(this, Phaser.Physics.ARCADE);
 	this.body.collideWorldBounds = true;
 }
@@ -89,9 +90,21 @@ var playState = {
         this.enemies = game.add.group();
         this.enemies.classType = Enemy1;
         this.maxNumberOfEnemies = 10;
+        // Create group for coins
+        this.coins = game.add.group();
+        this.coins.classType = Coin;
+
         // Create our timer
         game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
         game.time.events.add(Phaser.Timer.SECOND * 0.5, this.createEnemy, this);
+        game.time.events.add(Phaser.Timer.SECOND * 10, this.spawnCoin, this);
+
+        this.livesLabel = game.add.text(1, 0, 'Lives ' + this.player.lives,
+                            {font: '12px Arial', fill: '#000000'});
+        this.waveLabel = game.add.text(1, 24, 'Wave ' + this.wave,
+                            {font: '12px Arial', fill: '#000000'});
+        this.coinLabel = game.add.text(1, 48, 'Coins ' + this.player.coins,
+                            {font: '12px Arial', fill: '#000000'});
     },
 
     update: function() {
@@ -101,11 +114,12 @@ var playState = {
         game.physics.arcade.overlap(this.enemies, this.weapon.bullets, this.bulletCollisionHandler, null, this);
         game.physics.arcade.overlap(this.enemies, this.player, this.gameover, null, this);
         game.physics.arcade.collide(this.enemies);
+        game.physics.arcade.overlap(this.player, this.coins, this.coinCollisionHandler, null, this);
     },
 
     levelComplete: function() {
-        this.resetGame();
         this.wave++;
+        this.resetGame();
         switch (this.wave) {
             case 2:
                 this.maxNumberOfEnemies = 15;
@@ -133,11 +147,25 @@ var playState = {
     resetGame: function() {
         this.player.x = 276;
         this.player.y = 276;
+        this.livesLabel.setText('Lives ' + this.player.lives);
+        this.waveLabel.setText('Wave ' + this.wave);
         var length = this.enemies.length;
         for (var i=0; i < length; i++) {
             this.enemies.remove(this.enemies.getAt(0));
         }
         this.weapon.killAll();
+    },
+
+    spawnCoin: function() {
+        var coin = new Coin(game, game.world.randomX, game.world.randomY, 1, 'coin_one');
+        this.coins.add(coin);
+    },
+
+    coinCollisionHandler: function(player, coin) {
+        this.coins.remove(coin);
+        player.coins += coin.value;
+        this.coinLabel.setText('Coins ' + this.player.coins);
+        game.time.events.add(Phaser.Timer.SECOND * (10 + (Math.floor(Math.random()*10))), this.spawnCoin, this);
     },
 
     createEnemy: function() {
