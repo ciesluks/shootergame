@@ -13,7 +13,6 @@ var playState = {
         // Create player
         this.player = new Player(this.game, 276,276, 'viking_move');
         game.add.existing(this.player);
-        this.setWeapon();
         // First wave
         this.wave = 1;
         // Create group for enemies
@@ -25,7 +24,7 @@ var playState = {
         this.coins.classType = Coin;
 
         // Create our timer
-        game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
+        game.time.events.add(Phaser.Timer.SECOND * 60, this.waveComplete, this);
         game.time.events.add(Phaser.Timer.SECOND * 0.5, this.createEnemy, this);
         game.time.events.add(Phaser.Timer.SECOND * 10, this.spawnCoin, this);
 
@@ -38,25 +37,23 @@ var playState = {
     },
 
     update: function() {
-        // Update weapon
-        this.fireWeapon();
         // Check for collision events
-        game.physics.arcade.overlap(this.enemies, this.weapon.bullets, this.bulletCollisionHandler, null, this);
+        game.physics.arcade.overlap(this.enemies, this.player.weapon.bullets, this.bulletCollisionHandler, null, this);
         game.physics.arcade.overlap(this.enemies, this.player, this.gameover, null, this);
         game.physics.arcade.collide(this.enemies);
         game.physics.arcade.overlap(this.player, this.coins, this.coinCollisionHandler, null, this);
     },
 
-    levelComplete: function() {
+    waveComplete: function() {
         this.wave++;
         this.resetGame();
         switch (this.wave) {
             case 2:
                 this.maxNumberOfEnemies = 15;
-                game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
+                game.time.events.add(Phaser.Timer.SECOND * 60, this.waveComplete, this);
                 break;
             case 3:
-                game.time.events.add(Phaser.Timer.SECOND * 60, this.levelComplete, this);
+                game.time.events.add(Phaser.Timer.SECOND * 60, this.waveComplete, this);
                 break;
             case 4:
                 game.state.start('win');
@@ -83,7 +80,7 @@ var playState = {
         for (var i=0; i < length; i++) {
             this.enemies.remove(this.enemies.getAt(0));
         }
-        this.weapon.killAll();
+        this.player.weapon.killAll();
     },
 
     spawnCoin: function() {
@@ -155,52 +152,6 @@ var playState = {
         enemy.lives--;
         if (enemy.lives <= 0) {
             this.enemies.remove(enemy);
-        }
-    },
-
-    setWeapon: function() {
-        this.weapon = game.add.weapon(30, 'knife');
-        //  The bullet will be automatically killed when it leaves the world bounds
-        this.weapon.bulletKillType = Phaser.Weapon.KILL_WORLD_BOUNDS;
-        //  The speed at which the bullet is fired
-        this.weapon.bulletSpeed = 400;
-        //  Speed-up the rate of fire, allowing them to shoot 1 bullet every X ms
-        this.weapon.fireRate = 300;
-        this.weapon.trackSprite(this.player, 12, 12, false);
-    },
-
-    fireWeapon: function() {
-        if (this.fireRightKey.isDown & this.fireDownKey.isDown) {
-            this.weapon.fireAngle = 45;
-            this.weapon.fire();
-        }
-        else if (this.fireLeftKey.isDown & this.fireDownKey.isDown) {
-            this.weapon.fireAngle = 135;
-            this.weapon.fire();
-        }
-        else if (this.fireLeftKey.isDown & this.fireUpKey.isDown) {
-            this.weapon.fireAngle = 225;
-            this.weapon.fire();
-        }
-        else if (this.fireRightKey.isDown & this.fireUpKey.isDown) {
-            this.weapon.fireAngle = 315;
-            this.weapon.fire();
-        }
-        else if (this.fireUpKey.isDown) {
-            this.weapon.fireAngle = Phaser.ANGLE_UP;
-            this.weapon.fire();
-        }
-        else if (this.fireDownKey.isDown) {
-            this.weapon.fireAngle = Phaser.ANGLE_DOWN;
-            this.weapon.fire();
-        }
-        else if (this.fireRightKey.isDown) {
-            this.weapon.fireAngle = Phaser.ANGLE_RIGHT;
-            this.weapon.fire();
-        }
-        else if (this.fireLeftKey.isDown) {
-            this.weapon.fireAngle = Phaser.ANGLE_LEFT;
-            this.weapon.fire();
         }
     }
 };
